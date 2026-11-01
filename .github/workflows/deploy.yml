@@ -1,0 +1,34 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t terraform-devops-app:latest .
+
+      - name: Deploy application
+        run: |
+          docker rm -f terraform-devops-container || true
+          docker run -d \
+            --name terraform-devops-container \
+            -p 80:80 \
+            --restart unless-stopped \
+            terraform-devops-app:latest
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          curl --fail http://localhost/
